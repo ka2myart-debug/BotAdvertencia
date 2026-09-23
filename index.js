@@ -107,11 +107,15 @@ client.on('interactionCreate', async (interaction) => {
                 const canal = await client.channels.fetch(CANAL_LOGS_ID);
                 if (canal) {
                     await canal.send({ embeds: [embed] });
-                    await interaction.reply({ content: 'Registro salvo com sucesso!', ephemeral: true });
+                    // Fecha o pop-up silenciosamente sem enviar mensagem extra
+                    await interaction.deferUpdate();
                 }
             } catch (error) {
                 console.error(error);
-                await interaction.reply({ content: 'Erro: O bot não tem permissão de "Ver Canal" e "Enviar Mensagens" no canal especificado.', ephemeral: true });
+                // Exibe erro apenas se a interação ainda não tiver sido respondida/fechada
+                if (!interaction.replied && !interaction.deferred) {
+                    await interaction.reply({ content: 'Erro: O bot não tem permissão de "Ver Canal" e "Enviar Mensagens" no canal especificado.', ephemeral: true });
+                }
             }
         }
     }
