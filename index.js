@@ -1,44 +1,49 @@
 const { Client, GatewayIntentBits, Partials, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, EmbedBuilder } = require('discord.js');
+const express = require('express');
 
-// Configuração base do bot
+// --- Servidor Web para Render e UptimeRobot ---
+const app = express();
+app.get('/', (req, res) => res.send('Sistema RH Tabacudos Online!'));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+// ----------------------------------------------
+
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
     partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
 
-// VARIAVEIS IMPORTANTES - SUBSTITUIR AQUI
-const TOKEN = 'TEU_TOKEN_AQUI'; 
-const CANAL_LOGS_ID = 'ID_DO_CANAL_AQUI'; // ID do canal onde o registo vai ficar guardado
+// Usando variáveis de ambiente (Segurança para o GitHub)
+const TOKEN = process.env.TOKEN; 
+const CANAL_LOGS_ID = process.env.CANAL_LOGS_ID;
 
 client.once('ready', () => {
     console.log(`Bot online como ${client.user.tag}!`);
 });
 
 client.on('messageCreate', async (message) => {
-    // Comando para gerar o botão (escreve isto no canal de advertências para fixar o botão)
     if (message.content === '!setup_adv') {
         const button = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId('abrir_form_adv')
-                .setLabel('Registar Advertência')
+                .setLabel('Registrar Advertência')
                 .setEmoji('⚠️')
                 .setStyle(ButtonStyle.Danger)
         );
 
         await message.channel.send({
-            content: '**Painel de Advertências - Tabacudos**\nClica no botão abaixo para preencher um novo registo.',
+            content: '**Painel de Advertências - Tabacudos**\nClique no botão abaixo para preencher um novo registro.',
             components: [button]
         });
     }
 });
 
 client.on('interactionCreate', async (interaction) => {
-    // Quando clicam no botão
     if (interaction.isButton()) {
         if (interaction.customId === 'abrir_form_adv') {
             const modal = new ModalBuilder()
                 .setCustomId('modal_adv')
-                .setTitle('Registo de Advertência');
+                .setTitle('Registro de Advertência');
 
             const nomeInput = new TextInputBuilder()
                 .setCustomId('nome_func')
@@ -60,11 +65,10 @@ client.on('interactionCreate', async (interaction) => {
 
             const motivoInput = new TextInputBuilder()
                 .setCustomId('motivo_adv')
-                .setLabel('Motivo e Penalidade Aplicada')
+                .setLabel('Motivo e Penalidade')
                 .setStyle(TextInputStyle.Paragraph)
                 .setRequired(true);
 
-            // Adicionar os campos ao Pop-up (cada campo precisa da sua própria ActionRow)
             modal.addComponents(
                 new ActionRowBuilder().addComponents(nomeInput),
                 new ActionRowBuilder().addComponents(idInput),
@@ -76,7 +80,6 @@ client.on('interactionCreate', async (interaction) => {
         }
     }
 
-    // Quando enviam o formulário preenchido
     if (interaction.isModalSubmit()) {
         if (interaction.customId === 'modal_adv') {
             const nome = interaction.fields.getTextInputValue('nome_func');
@@ -87,7 +90,7 @@ client.on('interactionCreate', async (interaction) => {
 
             const embed = new EmbedBuilder()
                 .setColor('#FF0000')
-                .setTitle('⚠️ REGISTO DE ADVERTÊNCIA ⚠️')
+                .setTitle('⚠️ REGISTRO DE ADVERTÊNCIA ⚠️')
                 .addFields(
                     { name: '👤 Funcionário', value: `${nome} | **ID:** ${idFunc}`, inline: false },
                     { name: '🛡️ Responsável', value: `${responsavel}`, inline: false },
@@ -100,9 +103,9 @@ client.on('interactionCreate', async (interaction) => {
             const canal = client.channels.cache.get(CANAL_LOGS_ID);
             if (canal) {
                 await canal.send({ embeds: [embed] });
-                await interaction.reply({ content: 'Advertência registada com sucesso no canal!', ephemeral: true });
+                await interaction.reply({ content: 'Registro salvo com sucesso!', ephemeral: true });
             } else {
-                await interaction.reply({ content: 'Erro: O canal de destino não foi encontrado. Verifica o ID.', ephemeral: true });
+                await interaction.reply({ content: 'Erro: Canal não encontrado. Revise o ID.', ephemeral: true });
             }
         }
     }
