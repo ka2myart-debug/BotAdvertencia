@@ -15,7 +15,9 @@ const client = new Client({
 
 // Usando variáveis de ambiente (Segurança para o GitHub)
 const TOKEN = process.env.TOKEN; 
-const CANAL_LOGS_ID = process.env.CANAL_LOGS_ID;
+
+// ID do Canal fixado manualmente no código
+const CANAL_LOGS_ID = '1552361514629865542';
 
 client.once('ready', () => {
     console.log(`Bot online como ${client.user.tag}!`);
@@ -100,12 +102,16 @@ client.on('interactionCreate', async (interaction) => {
                 .setFooter({ text: 'Tabacudos Restaurante - Sistema de RH' })
                 .setTimestamp();
 
-            const canal = client.channels.cache.get(CANAL_LOGS_ID);
-            if (canal) {
-                await canal.send({ embeds: [embed] });
-                await interaction.reply({ content: 'Registro salvo com sucesso!', ephemeral: true });
-            } else {
-                await interaction.reply({ content: 'Erro: Canal não encontrado. Revise o ID.', ephemeral: true });
+            try {
+                // Modificado para fetch para forçar a busca do canal
+                const canal = await client.channels.fetch(CANAL_LOGS_ID);
+                if (canal) {
+                    await canal.send({ embeds: [embed] });
+                    await interaction.reply({ content: 'Registro salvo com sucesso!', ephemeral: true });
+                }
+            } catch (error) {
+                console.error(error);
+                await interaction.reply({ content: 'Erro: O bot não tem permissão de "Ver Canal" e "Enviar Mensagens" no canal especificado.', ephemeral: true });
             }
         }
     }
